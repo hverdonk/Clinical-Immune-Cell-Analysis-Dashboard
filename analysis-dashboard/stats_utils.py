@@ -18,7 +18,7 @@ def format_response(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
     df["population"] = df["population"].astype("category")
-    df["patient_id"] = df["patient_id"].astype("category")
+    df["subject"] = df["subject"].astype("category")
     return df
 
 def transform_response(df: pd.DataFrame) -> pd.DataFrame:
@@ -56,7 +56,7 @@ def fit_mixed_effects_model(population: str, df: pd.DataFrame) -> dict[str, floa
     model = smf.mixedlm(
         "prop_logit ~ response",
         pop,
-        groups=pop["patient_id"]
+        groups=pop["subject"]
     )
 
     fit = model.fit(reml=False)
@@ -74,7 +74,7 @@ def analyze_all_populations(df: pd.DataFrame) -> pd.DataFrame:
     
     Args:
         df: The DataFrame containing the cell population summary data with
-            columns including 'population', 'patient_id', 'response', and 'prop'.
+            columns including 'population', 'subject', 'response', and 'prop'.
     
     Returns:
         A DataFrame with one row per population containing the model coefficients

@@ -12,11 +12,11 @@ import stats_utils as su
 
 
 def test_format_response_casts_population_and_patient_to_category_and_returns_copy() -> None:
-    """`format_response` casts `population` and `patient_id` to categorical types and returns a copy."""
+    """`format_response` casts `population` and `subject` to categorical types and returns a copy."""
     df = pd.DataFrame(
         {
             "population": ["b_cell", "nk_cell"],
-            "patient_id": ["P1", "P2"],
+            "subject": ["P1", "P2"],
             "response": ["yes", "no"],
             "prop": [0.1, 0.2],
         }
@@ -26,7 +26,7 @@ def test_format_response_casts_population_and_patient_to_category_and_returns_co
 
     assert out is not df
     assert str(out["population"].dtype) == "category"
-    assert str(out["patient_id"].dtype) == "category"
+    assert str(out["subject"].dtype) == "category"
 
 
 def test_transform_response_maps_yes_no_and_adds_prop_logit() -> None:
@@ -34,7 +34,7 @@ def test_transform_response_maps_yes_no_and_adds_prop_logit() -> None:
     df = pd.DataFrame(
         {
             "population": ["b_cell", "b_cell"],
-            "patient_id": ["P1", "P2"],
+            "subject": ["P1", "P2"],
             "response": ["no", "yes"],
             "prop": [0.25, 0.75],
         }
@@ -55,7 +55,7 @@ def test_transform_response_handles_prop_near_bounds_without_inf() -> None:
     df = pd.DataFrame(
         {
             "population": ["b_cell", "b_cell"],
-            "patient_id": ["P1", "P2"],
+            "subject": ["P1", "P2"],
             "response": ["no", "yes"],
             "prop": [0.0, 1.0],
         }
@@ -72,7 +72,7 @@ def test_fit_mixed_effects_model_returns_expected_keys(monkeypatch: pytest.Monke
     df = pd.DataFrame(
         {
             "population": ["b_cell", "b_cell", "nk_cell"],
-            "patient_id": ["P1", "P2", "P1"],
+            "subject": ["P1", "P2", "P1"],
             "response": [0, 1, 0],
             "prop_logit": [0.1, 0.2, 0.3],
         }
@@ -90,8 +90,8 @@ def test_fit_mixed_effects_model_returns_expected_keys(monkeypatch: pytest.Monke
     def _fake_mixedlm(formula, data, groups):
         assert formula == "prop_logit ~ response"
         assert (data["population"] == "b_cell").all()
-        # ensure groups passed is the population-filtered patient_id series
-        assert groups.equals(data["patient_id"])
+        # ensure groups passed is the population-filtered subject series
+        assert groups.equals(data["subject"])
         return _FakeModel()
 
     monkeypatch.setattr(su.smf, "mixedlm", _fake_mixedlm)
@@ -108,7 +108,7 @@ def test_analyze_all_populations_includes_all_categories_and_adjusts_pvalues(
     df = pd.DataFrame(
         {
             "population": ["b_cell", "nk_cell", "b_cell", "nk_cell"],
-            "patient_id": ["P1", "P1", "P2", "P2"],
+            "subject": ["P1", "P1", "P2", "P2"],
             "response": ["no", "yes", "yes", "no"],
             "prop": [0.2, 0.3, 0.4, 0.5],
         }

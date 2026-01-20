@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from db_summary import load_summary_with_sample_metadata_from_db
 from response_plot import prepare_response_plot_df, responder_boxplot_spec
-from stats_utils import bh_adjust, two_sided_permutation_pvalue
+from stats_utils import analyze_all_populations
 
 def main() -> None:
     """Run the Streamlit application UI.
@@ -102,83 +102,40 @@ def main() -> None:
         width='stretch',
     )
 
-    st.markdown("---")
     st.subheader("Significant differences")
-
-    rng = np.random.default_rng(0)
-    n_permutations = st.slider(
-        "Permutation test iterations",
-        min_value=200,
-        max_value=5000,
-        value=2000,
-        step=200,
-        help="Higher values give more stable p-values but take longer.",
+    st.caption(
+        """Used a mixed effects model to compare responder vs non-responder relative frequencies for each immune cell population. 
+        The mixed effects model accounts for non-independence of samples taken from the same patient, unlike paired t-tests, 
+        Wilcoxon signed-rank tests, or similar tests that assume independence of samples. 
+        Adjusted p-values using the Benjamini-Hochberg procedure."""
     )
-
-    rows: list[dict[str, object]] = []
-    for pop in populations:
-        sub = plot_df[plot_df["population"].astype(str) == str(pop)]
-        a = sub.loc[sub["response"] == "yes", "percentage"].to_numpy()
-        b = sub.loc[sub["response"] == "no", "percentage"].to_numpy()
-
-        if a.size < 2 or b.size < 2:
-            continue
-
-        p = two_sided_permutation_pvalue(
-            a,
-            b,
-            n_permutations=n_permutations,
-            rng=rng,
+    
+    try:
+        results_df = analyze_all_populations(plot_df)
+        
+        # Reorder columns to put population first
+        cols = ["population"] + [c for c in results_df.columns if c != "population"]
+        results_df = results_df[cols]
+        
+        # Style significant rows
+        def highlight_significant(row):
+            if row["p_adj"] < 0.05:
+                return ["font-weight: bold; background-color: #90EE90"] * len(row)
+            return [""] * len(row)
+        
+        styled_results = results_df.style.apply(highlight_significant, axis=1)
+        st.dataframe(
+            styled_results,
+            hide_index=True,
+            column_config={
+                "coef_response": st.column_config.NumberColumn(format="%.4f"),
+                "p_value": st.column_config.NumberColumn(format="%.4e"),
+                "p_adj": st.column_config.NumberColumn(format="%.4e"),
+            },
         )
-        rows.append(
-            {
-                "population": str(pop),
-                "n_responders": int(a.size),
-                "n_non_responders": int(b.size),
-                "mean_resp": float(np.mean(a)),
-                "mean_non_resp": float(np.mean(b)),
-                "median_resp": float(np.median(a)),
-                "median_non_resp": float(np.median(b)),
-                "delta_mean": float(np.mean(a) - np.mean(b)),
-                "delta_median": float(np.median(a) - np.median(b)),
-                "p_value": float(p),
-            }
-        )
-
-    if not rows:
-        st.info(
-            "Not enough samples per group to run statistics (need at least 2 responders and 2 non-responders per population)."
-        )
-        return
-
-    stats_df = pd.DataFrame(rows)
-    stats_df["p_adj_bh"] = bh_adjust(stats_df["p_value"].tolist())
-    stats_df = stats_df.sort_values(["p_adj_bh", "p_value", "population"], ascending=[True, True, True])
-
-    st.dataframe(
-        stats_df,
-        width="stretch",
-        hide_index=True,
-        column_config={
-            "mean_resp": st.column_config.NumberColumn(format="%.3f"),
-            "mean_non_resp": st.column_config.NumberColumn(format="%.3f"),
-            "median_resp": st.column_config.NumberColumn(format="%.3f"),
-            "median_non_resp": st.column_config.NumberColumn(format="%.3f"),
-            "delta_mean": st.column_config.NumberColumn(format="%.3f"),
-            "delta_median": st.column_config.NumberColumn(format="%.3f"),
-            "p_value": st.column_config.NumberColumn(format="%.4f"),
-            "p_adj_bh": st.column_config.NumberColumn(format="%.4f"),
-        },
-    )
-
-    sig = stats_df[stats_df["p_adj_bh"] <= 0.05]
-    if sig.empty:
-        st.info("No populations are significant at BH-adjusted p <= 0.05 with the current filters.")
-    else:
-        st.success(
-            "Significant populations (BH-adjusted p <= 0.05): "
-            + ", ".join(sig["population"].tolist())
-        )
+    except Exception as e:
+        st.warning(f"Could not perform statistical analysis: {e}")
+    
 
 
 if __name__ == "__main__":
