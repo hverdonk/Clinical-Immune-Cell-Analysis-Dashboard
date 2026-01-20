@@ -7,6 +7,14 @@ import pandas as pd
 
 
 def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
+    """Load summary data with sample metadata from a sqlite database.
+    
+    Args:
+        db_path: Path to the database file.
+    
+    Returns:
+        A DataFrame containing the summary data with sample metadata.
+    """
     if not db_path.exists():
         raise FileNotFoundError(str(db_path))
 
@@ -14,6 +22,7 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
     try:
         query = """
             SELECT
+                sub.subject_code AS subject,
                 s.sample_code AS sample,
                 s.sample_type AS sample_type,
                 s.treatment AS treatment,
@@ -21,9 +30,11 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
                 totals.total_count AS total_count,
                 cp.name AS population,
                 scc.count AS count,
+                (scc.count * 1.0 / totals.total_count) AS prop,
                 (scc.count * 100.0 / totals.total_count) AS percentage
             FROM sample_cell_count scc
             JOIN sample s ON s.id = scc.sample_id
+            JOIN subject sub ON sub.id = s.subject_id
             JOIN cell_population cp ON cp.id = scc.population_id
             JOIN (
                 SELECT
@@ -40,6 +51,7 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
         conn.close()
 
     required = {
+        "subject",
         "sample",
         "sample_type",
         "treatment",
@@ -47,6 +59,7 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
         "total_count",
         "population",
         "count",
+        "prop",
         "percentage",
     }
     missing = required.difference(set(df.columns))
@@ -59,6 +72,7 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
 
     return df[
         [
+            "subject",
             "sample",
             "sample_type",
             "treatment",
@@ -66,6 +80,7 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
             "total_count",
             "population",
             "count",
+            "prop",
             "percentage",
         ]
     ]

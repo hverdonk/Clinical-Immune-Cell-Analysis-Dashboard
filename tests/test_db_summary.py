@@ -103,6 +103,7 @@ def test_load_summary_with_sample_metadata_from_db_returns_expected_shape_and_co
     df = db.load_summary_with_sample_metadata_from_db(db_path)
 
     assert list(df.columns) == [
+        "subject",
         "sample",
         "sample_type",
         "treatment",
@@ -110,6 +111,7 @@ def test_load_summary_with_sample_metadata_from_db_returns_expected_shape_and_co
         "total_count",
         "population",
         "count",
+        "prop",
         "percentage",
     ]
     assert len(df) == len(lcc.CELL_POPULATIONS)
@@ -142,6 +144,7 @@ def test_load_summary_with_sample_metadata_from_db_totals_and_percentages(tmp_pa
     for _, row in df.iterrows():
         pop = row["population"]
         assert row["count"] == counts[pop]
+        assert row["prop"] == pytest.approx(counts[pop] / total_expected)
         assert row["percentage"] == pytest.approx(counts[pop] * 100.0 / total_expected)
 
 
