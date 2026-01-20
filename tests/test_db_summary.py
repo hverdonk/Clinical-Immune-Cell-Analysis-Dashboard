@@ -7,7 +7,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "analysis-dashboard"))
 
 import load_cell_counts as lcc
-import streamlit_app as app
+import db_summary as db
 
 
 def _setup_db(db_path: Path) -> None:
@@ -88,8 +88,8 @@ def _insert_sample_with_counts(
         conn.close()
 
 
-def test_load_summary_from_db_returns_expected_shape_and_columns(tmp_path: Path) -> None:
-    """`load_summary_from_db` returns a long-format summary with the expected schema.
+def test_load_summary_with_sample_metadata_from_db_returns_expected_shape_and_columns(tmp_path: Path) -> None:
+    """`load_summary_with_sample_metadata_from_db` returns a long-format summary with the expected schema.
 
     Verifies that the returned DataFrame has the exact expected columns and one row
     per population for the inserted sample.
@@ -100,10 +100,13 @@ def test_load_summary_from_db_returns_expected_shape_and_columns(tmp_path: Path)
     counts = {p: i + 1 for i, p in enumerate(lcc.CELL_POPULATIONS)}
     _insert_sample_with_counts(db_path, sample_code="S01_T0", counts_by_population=counts)
 
-    df = app.load_summary_from_db(db_path)
+    df = db.load_summary_with_sample_metadata_from_db(db_path)
 
     assert list(df.columns) == [
         "sample",
+        "sample_type",
+        "treatment",
+        "response",
         "total_count",
         "population",
         "count",
@@ -113,8 +116,8 @@ def test_load_summary_from_db_returns_expected_shape_and_columns(tmp_path: Path)
     assert set(df["population"].tolist()) == set(lcc.CELL_POPULATIONS)
 
 
-def test_load_summary_from_db_totals_and_percentages(tmp_path: Path) -> None:
-    """`load_summary_from_db` computes correct totals and relative frequencies.
+def test_load_summary_with_sample_metadata_from_db_totals_and_percentages(tmp_path: Path) -> None:
+    """`load_summary_with_sample_metadata_from_db` computes correct totals and relative frequencies.
 
     Checks that `total_count` equals the sum of counts across all populations and
     that `percentage` is computed as `count / total_count * 100`.
@@ -131,7 +134,7 @@ def test_load_summary_from_db_totals_and_percentages(tmp_path: Path) -> None:
     }
     _insert_sample_with_counts(db_path, sample_code="S01_T0", counts_by_population=counts)
 
-    df = app.load_summary_from_db(db_path)
+    df = db.load_summary_with_sample_metadata_from_db(db_path)
 
     total_expected = sum(counts.values())
     assert (df["total_count"] == total_expected).all()
@@ -142,9 +145,9 @@ def test_load_summary_from_db_totals_and_percentages(tmp_path: Path) -> None:
         assert row["percentage"] == pytest.approx(counts[pop] * 100.0 / total_expected)
 
 
-def test_load_summary_from_db_missing_file_raises(tmp_path: Path) -> None:
-    """`load_summary_from_db` fails fast when the database file does not exist."""
+def test_load_summary_with_sample_metadata_from_db_missing_file_raises(tmp_path: Path) -> None:
+    """`load_summary_with_sample_metadata_from_db` fails fast when the database file does not exist."""
     db_path = tmp_path / "does_not_exist.sqlite"
 
     with pytest.raises(FileNotFoundError):
-        app.load_summary_from_db(db_path)
+        db.load_summary_with_sample_metadata_from_db(db_path)

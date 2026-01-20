@@ -9,35 +9,25 @@ def apply_treatment_and_sample_type_filters(
     selected_treatments: list[str],
     selected_sample_types: list[str],
 ) -> pd.DataFrame:
+    """Filter a summary DataFrame by treatment and sample type.
+
+    Args:
+        df: Input DataFrame expected to contain `treatment` and `sample_type`
+            columns.
+        selected_treatments: Treatments to keep. If empty, no treatment filtering
+            is applied.
+        selected_sample_types: Sample types to keep. If empty, no sample type
+            filtering is applied.
+
+    Returns:
+        A filtered copy of `df` containing only the selected treatments and/or
+        sample types.
+    """
     out = df.copy()
     if selected_treatments:
         out = out[out["treatment"].isin(selected_treatments)]
     if selected_sample_types:
         out = out[out["sample_type"].isin(selected_sample_types)]
-    return out
-
-
-def add_response_group_column(df: pd.DataFrame) -> pd.DataFrame:
-    resp_raw = df["response"].fillna("").astype(str).str.strip().str.lower()
-    out = df.assign(response_group=pd.Series(pd.NA, index=df.index, dtype="string"))
-
-    out.loc[resp_raw.isin({"yes", "y", "responder", "responders"}), "response_group"] = (
-        "Responder"
-    )
-    out.loc[
-        resp_raw.isin(
-            {
-                "no",
-                "n",
-                "non-responder",
-                "nonresponder",
-                "non-responders",
-                "nonresponders",
-            }
-        ),
-        "response_group",
-    ] = "Non-responder"
-
     return out
 
 
@@ -47,14 +37,32 @@ def prepare_response_plot_df(
     selected_treatments: list[str],
     selected_sample_types: list[str],
 ) -> tuple[pd.DataFrame, list[str]]:
+    """Prepare a DataFrame for responder vs non-responder boxplots.
+
+    Applies treatment/sample-type filters, drops rows
+    with null response labels, and makes `population` an ordered
+    categorical column for stable plotting.
+
+    Args:
+        summary_meta: Long-format per-sample/per-population summary DataFrame
+            with sample metadata. Expected columns include: `treatment`,
+            `sample_type`, `response`, and `population`.
+        selected_treatments: Treatments to include (empty means include all).
+        selected_sample_types: Sample types to include (empty means include all).
+
+    Returns:
+        A tuple of:
+        - plot_df: Filtered DataFrame containing an ordered categorical `population` column.
+        - populations: The ordered list of population names used as categories.
+    """
     plot_df = apply_treatment_and_sample_type_filters(
         summary_meta,
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
     )
 
-    plot_df = add_response_group_column(plot_df)
-    plot_df = plot_df.dropna(subset=["response_group"])
+    #plot_df = add_response_group_column(plot_df)
+    plot_df = plot_df.dropna(subset=["response"])
 
     populations = (
         plot_df["population"].dropna().astype(str).sort_values().unique().tolist()
@@ -68,25 +76,38 @@ def prepare_response_plot_df(
 
 
 def responder_boxplot_spec() -> dict:
+    """Return the Vega-Lite spec used to render responder boxplots.
+
+    The spec assumes the plotted data contains the columns:
+
+    - `population`
+    - `response`
+    - `percentage`
+    - `sample`
+
+    Returns:
+        A Vega-Lite chart specification dictionary suitable for passing to
+        `st.vega_lite_chart`.
+    """
     return {
         "mark": {"type": "boxplot", "extent": 1.5},
         "encoding": {
             "x": {"field": "population", "type": "nominal", "title": "Cell population"},
-            "xOffset": {"field": "response_group"},
+            "xOffset": {"field": "response"},
             "y": {
                 "field": "percentage",
                 "type": "quantitative",
                 "title": "Relative frequency (%)",
             },
             "color": {
-                "field": "response_group",
+                "field": "response",
                 "type": "nominal",
                 "title": "Response",
             },
             "tooltip": [
                 {"field": "sample", "type": "nominal"},
                 {"field": "population", "type": "nominal"},
-                {"field": "response_group", "type": "nominal"},
+                {"field": "response", "type": "nominal"},
                 {"field": "percentage", "type": "quantitative", "format": ".2f"},
             ],
         },

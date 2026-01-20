@@ -59,14 +59,12 @@ def main() -> None:
         },
     )
 
-    # summary: return df[["sample", "total_count", "population", "count", "percentage"]]
-    # summary_meta: return df[["sample", "sample_type", "treatment", "response", "total_count", "population", "count", "percentage"]]
-
     st.subheader("Responders vs Non-responders")
     st.caption(
         "Boxplots show per-sample relative frequencies (%) for each immune cell population, split by response."
     )
 
+    # add dropdown for users to select treatments (default to "miraclib" if present)
     treatments = (
         summary_meta["treatment"].dropna().astype(str).sort_values().unique().tolist()
     )
@@ -77,6 +75,7 @@ def main() -> None:
         default=default_treatments,
     )
 
+    # add dropdown for users to select sample types (default to "PBMC" if present)
     sample_types = (
         summary_meta["sample_type"].dropna().astype(str).sort_values().unique().tolist()
     )
@@ -100,7 +99,7 @@ def main() -> None:
     st.vega_lite_chart(
         plot_df,
         responder_boxplot_spec(),
-        use_container_width=True,
+        width='stretch',
     )
 
     st.markdown("---")
@@ -119,8 +118,8 @@ def main() -> None:
     rows: list[dict[str, object]] = []
     for pop in populations:
         sub = plot_df[plot_df["population"].astype(str) == str(pop)]
-        a = sub.loc[sub["response_group"] == "Responder", "percentage"].to_numpy()
-        b = sub.loc[sub["response_group"] == "Non-responder", "percentage"].to_numpy()
+        a = sub.loc[sub["response"] == "yes", "percentage"].to_numpy()
+        b = sub.loc[sub["response"] == "no", "percentage"].to_numpy()
 
         if a.size < 2 or b.size < 2:
             continue
