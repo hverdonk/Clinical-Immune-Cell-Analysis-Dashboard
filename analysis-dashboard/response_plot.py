@@ -3,11 +3,12 @@ from __future__ import annotations
 import pandas as pd
 
 
-def apply_treatment_and_sample_type_filters(
+def apply_filters(
     df: pd.DataFrame,
     *,
     selected_treatments: list[str],
     selected_sample_types: list[str],
+    selected_time_from_treatment_start: list[str],
 ) -> pd.DataFrame:
     """Filter a summary DataFrame by treatment and sample type.
 
@@ -18,6 +19,7 @@ def apply_treatment_and_sample_type_filters(
             is applied.
         selected_sample_types: Sample types to keep. If empty, no sample type
             filtering is applied.
+        selected_time_from_treatment_start: Time from treatment start to keep. If empty, no time from treatment start filtering is applied.
 
     Returns:
         A filtered copy of `df` containing only the selected treatments and/or
@@ -28,6 +30,8 @@ def apply_treatment_and_sample_type_filters(
         out = out[out["treatment"].isin(selected_treatments)]
     if selected_sample_types:
         out = out[out["sample_type"].isin(selected_sample_types)]
+    if selected_time_from_treatment_start:
+        out = out[out["time_from_treatment_start"].isin(selected_time_from_treatment_start)]
     return out
 
 
@@ -36,6 +40,7 @@ def prepare_response_plot_df(
     *,
     selected_treatments: list[str],
     selected_sample_types: list[str],
+    selected_time_from_treatment_start: list[str],
 ) -> tuple[pd.DataFrame, list[str]]:
     """Prepare a DataFrame for responder vs non-responder boxplots.
 
@@ -49,19 +54,20 @@ def prepare_response_plot_df(
             `sample_type`, `response`, and `population`.
         selected_treatments: Treatments to include (empty means include all).
         selected_sample_types: Sample types to include (empty means include all).
+        selected_time_from_treatment_start: Time from treatment start to include (empty means include all).
 
     Returns:
         A tuple of:
         - plot_df: Filtered DataFrame containing an ordered categorical `population` column.
         - populations: The ordered list of population names used as categories.
     """
-    plot_df = apply_treatment_and_sample_type_filters(
+    plot_df = apply_filters(
         summary_meta,
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
+        selected_time_from_treatment_start=selected_time_from_treatment_start,
     )
 
-    #plot_df = add_response_group_column(plot_df)
     plot_df = plot_df.dropna(subset=["response"])
 
     populations = (

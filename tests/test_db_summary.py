@@ -103,9 +103,14 @@ def test_load_summary_with_sample_metadata_from_db_returns_expected_shape_and_co
     df = db.load_summary_with_sample_metadata_from_db(db_path)
 
     assert list(df.columns) == [
+        "project",
         "subject",
+        "condition",
+        "age",
+        "sex",
         "sample",
         "sample_type",
+        "time_from_treatment_start",
         "treatment",
         "response",
         "total_count",

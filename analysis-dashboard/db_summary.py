@@ -22,9 +22,14 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
     try:
         query = """
             SELECT
+                p.name AS project,
                 sub.subject_code AS subject,
+                sub.condition AS condition,
+                sub.age AS age,
+                sub.sex AS sex,
                 s.sample_code AS sample,
                 s.sample_type AS sample_type,
+                s.time_from_treatment_start AS time_from_treatment_start,
                 s.treatment AS treatment,
                 s.response AS response,
                 totals.total_count AS total_count,
@@ -35,6 +40,7 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
             FROM sample_cell_count scc
             JOIN sample s ON s.id = scc.sample_id
             JOIN subject sub ON sub.id = s.subject_id
+            JOIN project p ON p.id = sub.project_id
             JOIN cell_population cp ON cp.id = scc.population_id
             JOIN (
                 SELECT
@@ -51,9 +57,14 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
         conn.close()
 
     required = {
+        "project",
         "subject",
+        "condition",
+        "age",
+        "sex",
         "sample",
         "sample_type",
+        "time_from_treatment_start",
         "treatment",
         "response",
         "total_count",
@@ -69,12 +80,21 @@ def load_summary_with_sample_metadata_from_db(db_path: Path) -> pd.DataFrame:
     df["total_count"] = pd.to_numeric(df["total_count"], errors="raise").astype(int)
     df["count"] = pd.to_numeric(df["count"], errors="raise").astype(int)
     df["percentage"] = pd.to_numeric(df["percentage"], errors="raise")
+    df["age"] = pd.to_numeric(df["age"], errors="coerce")
+    df["time_from_treatment_start"] = pd.to_numeric(
+        df["time_from_treatment_start"], errors="coerce"
+    )
 
     return df[
         [
+            "project",
             "subject",
+            "condition",
+            "age",
+            "sex",
             "sample",
             "sample_type",
+            "time_from_treatment_start",
             "treatment",
             "response",
             "total_count",
