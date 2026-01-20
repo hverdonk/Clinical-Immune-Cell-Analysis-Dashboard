@@ -1,11 +1,14 @@
 import sqlite3
 from pathlib import Path
+import sys
 
 import pytest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "analysis-dashboard"))
+
 import load_cell_counts as lcc
 
-
+# TODO: add per-function docstrings with description of what's being tested
 def _write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
     content_lines = [",".join(header)]
     content_lines.extend(",".join(row) for row in rows)

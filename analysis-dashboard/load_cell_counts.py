@@ -63,7 +63,7 @@ CREATE INDEX IF NOT EXISTS idx_sample_cell_count_population
     ON sample_cell_count(population_id);
 """
 
-
+# TODO: add per-function docstrings with description and parameters
 def connect(db_path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -244,7 +244,7 @@ def load_csv_into_db(csv_path: Path, db_path: Path) -> None:
 
 def main() -> None:
     base = Path(__file__).resolve().parent
-    csv_path = base / "cell-count.csv"
+    csv_path = base / "data" / "cell-count.csv"
     db_path = base / "cell_counts.sqlite"
     load_csv_into_db(csv_path=csv_path, db_path=db_path)
 

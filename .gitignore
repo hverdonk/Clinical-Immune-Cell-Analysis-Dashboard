@@ -2,3 +2,4 @@
 __pycache__
 .pytest_cache
 .windsurf
+analysis-dashboard/cell_counts.sqlite

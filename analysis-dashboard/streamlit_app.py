@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 import sqlite3
 
 import pandas as pd
 import streamlit as st
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 import load_cell_counts as lcc
 
-
+# TODO: add per-function docstrings with description and parameters
 def load_summary_from_db(db_path: Path) -> pd.DataFrame:
     if not db_path.exists():
         raise FileNotFoundError(str(db_path))
@@ -71,7 +74,9 @@ def main() -> None:
 
     except Exception as e:
         st.error(str(e))
-        st.info("If you haven't created the database yet, run: python load_cell_counts.py")
+        st.info(
+            "If you haven't created the database yet, run: python analysis-dashboard/load_cell_counts.py"
+        )
         st.stop()
 
     st.subheader("Summary Table")
