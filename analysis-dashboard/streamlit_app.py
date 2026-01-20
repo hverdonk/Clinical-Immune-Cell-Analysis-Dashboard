@@ -13,6 +13,23 @@ import load_cell_counts as lcc
 
 # TODO: add per-function docstrings with description and parameters
 def load_summary_from_db(db_path: Path) -> pd.DataFrame:
+    """Load a per-sample, per-population summary table from the SQLite database.
+
+    The returned table is in long format with one row per `(sample, population)`
+    pair and includes the total cell count per sample as well as population
+    counts and percentages.
+
+    Args:
+        db_path: Path to the SQLite database file.
+
+    Returns:
+        A DataFrame with columns: `sample`, `total_count`, `population`, `count`,
+        and `percentage`.
+
+    Raises:
+        FileNotFoundError: If `db_path` does not exist.
+        RuntimeError: If the SQL query does not return the expected columns.
+    """
     if not db_path.exists():
         raise FileNotFoundError(str(db_path))
 
@@ -55,6 +72,17 @@ def load_summary_from_db(db_path: Path) -> pd.DataFrame:
 
 
 def main() -> None:
+    """Run the Streamlit application UI.
+
+    The UI loads summary data from a default database or from a user-uploaded
+    SQLite file and displays it as an interactive table.
+
+    Args:
+        None.
+
+    Returns:
+        None.
+    """
     st.set_page_config(page_title="Immune Cell Frequencies", layout="wide")
     st.title("Immune Cell Population Relative Frequencies")
 

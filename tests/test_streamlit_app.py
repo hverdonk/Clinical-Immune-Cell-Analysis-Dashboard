@@ -9,8 +9,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "analysis-dashboard
 import load_cell_counts as lcc
 import streamlit_app as app
 
-# TODO: add per-function docstrings with description of what's being tested
+
 def _setup_db(db_path: Path) -> None:
+    """Create an empty SQLite database with the application schema.
+
+    This helper initializes all tables/indexes via `lcc.SCHEMA_SQL` and inserts the
+    canonical set of immune cell populations so downstream tests can insert sample
+    counts and run the dashboard summary query.
+    """
     conn = sqlite3.connect(db_path)
     try:
         conn.executescript(lcc.SCHEMA_SQL)
@@ -29,6 +35,12 @@ def _insert_sample_with_counts(
     sample_code: str,
     counts_by_population: dict[str, int],
 ) -> None:
+    """Insert one sample and per-population counts into the SQLite database.
+
+    This helper creates minimal project/subject/sample rows of test data required by
+    foreign keys, then inserts (or replaces) `sample_cell_count` records for the
+    provided `counts_by_population` mapping.
+    """
     conn = sqlite3.connect(db_path)
     try:
         with conn:
@@ -77,6 +89,11 @@ def _insert_sample_with_counts(
 
 
 def test_load_summary_from_db_returns_expected_shape_and_columns(tmp_path: Path) -> None:
+    """`load_summary_from_db` returns a long-format summary with the expected schema.
+
+    Verifies that the returned DataFrame has the exact expected columns and one row
+    per population for the inserted sample.
+    """
     db_path = tmp_path / "cell_counts.sqlite"
     _setup_db(db_path)
 
@@ -97,6 +114,11 @@ def test_load_summary_from_db_returns_expected_shape_and_columns(tmp_path: Path)
 
 
 def test_load_summary_from_db_totals_and_percentages(tmp_path: Path) -> None:
+    """`load_summary_from_db` computes correct totals and relative frequencies.
+
+    Checks that `total_count` equals the sum of counts across all populations and
+    that `percentage` is computed as `count / total_count * 100`.
+    """
     db_path = tmp_path / "cell_counts.sqlite"
     _setup_db(db_path)
 
@@ -121,6 +143,7 @@ def test_load_summary_from_db_totals_and_percentages(tmp_path: Path) -> None:
 
 
 def test_load_summary_from_db_missing_file_raises(tmp_path: Path) -> None:
+    """`load_summary_from_db` fails fast when the database file does not exist."""
     db_path = tmp_path / "does_not_exist.sqlite"
 
     with pytest.raises(FileNotFoundError):

@@ -8,14 +8,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "analysis-dashboard
 
 import load_cell_counts as lcc
 
-# TODO: add per-function docstrings with description of what's being tested
+
 def _write_csv(path: Path, header: list[str], rows: list[list[str]]) -> None:
+    """Write a minimal CSV file for ingestion tests.
+
+    This helper constructs a CSV from an explicit header row and a list of raw
+    string rows, writing it to `path`.
+    """
     content_lines = [",".join(header)]
     content_lines.extend(",".join(row) for row in rows)
     path.write_text("\n".join(content_lines) + "\n")
 
 
 def test_load_csv_into_db_success(tmp_path: Path) -> None:
+    """`load_csv_into_db` loads one CSV row into SQLite with correct relational data.
+
+    Validates that:
+    - project/subject/sample rows are inserted with the expected values
+    - one `sample_cell_count` row exists per population
+    - the sum of inserted counts matches the input
+    """
     csv_path = tmp_path / "cell-count.csv"
     db_path = tmp_path / "cell_counts.sqlite"
 
@@ -96,6 +108,7 @@ def test_load_csv_into_db_success(tmp_path: Path) -> None:
 
 
 def test_load_csv_into_db_missing_file(tmp_path: Path) -> None:
+    """`load_csv_into_db` raises `FileNotFoundError` when the input CSV path is missing."""
     csv_path = tmp_path / "does_not_exist.csv"
     db_path = tmp_path / "cell_counts.sqlite"
 
@@ -104,6 +117,11 @@ def test_load_csv_into_db_missing_file(tmp_path: Path) -> None:
 
 
 def test_load_csv_into_db_missing_required_column(tmp_path: Path) -> None:
+    """`load_csv_into_db` rejects CSVs missing required columns.
+
+    Specifically verifies that omitting `time_from_treatment_start` causes a
+    `ValueError` with an informative message.
+    """
     csv_path = tmp_path / "cell-count.csv"
     db_path = tmp_path / "cell_counts.sqlite"
 
@@ -147,6 +165,7 @@ def test_load_csv_into_db_missing_required_column(tmp_path: Path) -> None:
 
 
 def test_load_csv_into_db_missing_population_count_raises(tmp_path: Path) -> None:
+    """`load_csv_into_db` raises a ValueError when a required population count cell is empty."""
     csv_path = tmp_path / "cell-count.csv"
     db_path = tmp_path / "cell_counts.sqlite"
 

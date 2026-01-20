@@ -63,8 +63,16 @@ CREATE INDEX IF NOT EXISTS idx_sample_cell_count_population
     ON sample_cell_count(population_id);
 """
 
-# TODO: add per-function docstrings with description and parameters
+
 def connect(db_path: Path) -> sqlite3.Connection:
+    """Open a SQLite connection with useful defaults enabled.
+
+    Args:
+        db_path: Path to the SQLite database file.
+
+    Returns:
+        A SQLite connection with `sqlite3.Row` row factory and foreign keys enabled.
+    """
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -72,6 +80,14 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 
 def initialize_schema(conn: sqlite3.Connection) -> None:
+    """Create database tables/indexes and seed required reference data.
+
+    Args:
+        conn: An open SQLite connection.
+
+    Returns:
+        None.
+    """
     conn.executescript(SCHEMA_SQL)
     conn.executemany(
         "INSERT OR IGNORE INTO cell_population(name) VALUES (?)",
@@ -86,6 +102,25 @@ def _get_id_cached(
     select_sql: str,
     select_params: Tuple[object, ...],
 ) -> int:
+    """Fetch a single integer ID from the database with an in-memory cache.
+
+    This is a small helper to avoid repeating `SELECT id ...` queries during CSV
+    ingestion.
+
+    Args:
+        conn: An open SQLite connection.
+        cache: Cache mapping a `(table_name, key)` tuple to an integer primary key.
+        cache_key: Key used to look up or store the resulting ID in `cache`.
+        select_sql: SQL query expected to return a single row with an ID in the
+            first column.
+        select_params: Parameters for `select_sql`.
+
+    Returns:
+        The integer ID from the first column of the first row.
+
+    Raises:
+        RuntimeError: If the query returns no rows.
+    """
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
@@ -100,6 +135,24 @@ def _get_id_cached(
 
 
 def load_csv_into_db(csv_path: Path, db_path: Path) -> None:
+    """Load cell-count CSV data into a SQLite database.
+
+    This function initializes the schema if needed, validates that the CSV
+    contains all required columns, then upserts projects/subjects/samples and
+    writes per-sample cell population counts.
+
+    Args:
+        csv_path: Path to the input CSV file.
+        db_path: Path to the SQLite database file (created if it does not exist).
+
+    Returns:
+        None.
+
+    Raises:
+        FileNotFoundError: If `csv_path` does not exist.
+        ValueError: If the CSV header is missing, required columns are missing,
+            or a required count cell is empty.
+    """
     if not csv_path.exists():
         raise FileNotFoundError(str(csv_path))
 
@@ -243,6 +296,14 @@ def load_csv_into_db(csv_path: Path, db_path: Path) -> None:
 
 
 def main() -> None:
+    """CLI entry point that loads the default CSV into the default database.
+
+    Args:
+        None.
+
+    Returns:
+        None.
+    """
     base = Path(__file__).resolve().parent
     csv_path = base / "data" / "cell-count.csv"
     db_path = base / "cell_counts.sqlite"
