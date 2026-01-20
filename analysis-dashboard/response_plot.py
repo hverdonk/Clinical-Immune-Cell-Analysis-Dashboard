@@ -9,6 +9,9 @@ def apply_filters(
     selected_treatments: list[str],
     selected_sample_types: list[str],
     selected_time_from_treatment_start: list[str],
+    selected_sexes: list[str],
+    selected_ages: list[int],
+    selected_projects: list[str],
 ) -> pd.DataFrame:
     """Filter a summary DataFrame by treatment and sample type.
 
@@ -32,6 +35,12 @@ def apply_filters(
         out = out[out["sample_type"].isin(selected_sample_types)]
     if selected_time_from_treatment_start:
         out = out[out["time_from_treatment_start"].isin(selected_time_from_treatment_start)]
+    if selected_sexes:
+        out = out[out["sex"].isin(selected_sexes)]
+    if selected_ages:
+        out = out[out["age"].isin(selected_ages)]
+    if selected_projects:
+        out = out[out["project"].isin(selected_projects)]
     return out
 
 
@@ -41,6 +50,9 @@ def prepare_response_plot_df(
     selected_treatments: list[str],
     selected_sample_types: list[str],
     selected_time_from_treatment_start: list[str],
+    selected_sexes: list[str],
+    selected_ages: list[int],
+    selected_projects: list[str],
 ) -> tuple[pd.DataFrame, list[str]]:
     """Prepare a DataFrame for responder vs non-responder boxplots.
 
@@ -55,7 +67,9 @@ def prepare_response_plot_df(
         selected_treatments: Treatments to include (empty means include all).
         selected_sample_types: Sample types to include (empty means include all).
         selected_time_from_treatment_start: Time from treatment start to include (empty means include all).
-
+        selected_sexes: Sexes to include (empty means include all).
+        selected_ages: Ages to include (empty means include all).
+        selected_projects: Projects to include (empty means include all).
     Returns:
         A tuple of:
         - plot_df: Filtered DataFrame containing an ordered categorical `population` column.
@@ -66,6 +80,9 @@ def prepare_response_plot_df(
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
         selected_time_from_treatment_start=selected_time_from_treatment_start,
+        selected_sexes=selected_sexes,
+        selected_ages=selected_ages,
+        selected_projects=selected_projects,
     )
 
     plot_df = plot_df.dropna(subset=["response"])

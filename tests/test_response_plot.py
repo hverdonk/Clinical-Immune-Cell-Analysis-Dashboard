@@ -16,6 +16,9 @@ def test_apply_filters_no_filters_returns_copy() -> None:
             "treatment": ["A", "B"],
             "sample_type": ["PBMC", "TIL"],
             "time_from_treatment_start": [0, 7],
+            "sex": ["F", "M"],
+            "age": [34, 45],
+            "project": ["P1", "P2"],
             "other": [1, 2],
         }
     )
@@ -25,19 +28,25 @@ def test_apply_filters_no_filters_returns_copy() -> None:
         selected_treatments=[],
         selected_sample_types=[],
         selected_time_from_treatment_start=[],
+        selected_sexes=[],
+        selected_ages=[],
+        selected_projects=[],
     )
 
     assert out.equals(df)
     assert out is not df
 
 
-def test_apply_filters_filters_all_dimensions() -> None:
+def test_apply_filters_filters_multiple_dimensions() -> None:
     """`apply_filters` can filter on treatment, sample type, and time_from_treatment_start simultaneously."""
     df = pd.DataFrame(
         {
             "treatment": ["A", "A", "B", "A"],
             "sample_type": ["PBMC", "TIL", "PBMC", "PBMC"],
             "time_from_treatment_start": [0, 0, 0, 7],
+            "sex": ["F", "F", "M", "F"],
+            "age": [34, 34, 45, 34],
+            "project": ["P1", "P1", "P2", "P1"],
             "value": [1, 2, 3, 4],
         }
     )
@@ -47,6 +56,9 @@ def test_apply_filters_filters_all_dimensions() -> None:
         selected_treatments=["A"],
         selected_sample_types=["PBMC"],
         selected_time_from_treatment_start=[0],
+        selected_sexes=[],
+        selected_ages=[],
+        selected_projects=[],
     )
 
     assert len(out) == 1
@@ -63,6 +75,9 @@ def test_apply_filters_filters_time_from_treatment_start() -> None:
             "treatment": ["A", "A", "A"],
             "sample_type": ["PBMC", "PBMC", "PBMC"],
             "time_from_treatment_start": [0, 7, 14],
+            "sex": ["F", "F", "F"],
+            "age": [34, 34, 34],
+            "project": ["P1", "P1", "P1"],
             "value": [1, 2, 3],
         }
     )
@@ -72,9 +87,43 @@ def test_apply_filters_filters_time_from_treatment_start() -> None:
         selected_treatments=[],
         selected_sample_types=[],
         selected_time_from_treatment_start=[7, 14],
+        selected_sexes=[],
+        selected_ages=[],
+        selected_projects=[],
     )
 
     assert out["time_from_treatment_start"].tolist() == [7, 14]
+
+
+def test_apply_filters_filters_sex_age_and_project() -> None:
+    """`apply_filters` filters on selected sexes, ages, and projects."""
+    df = pd.DataFrame(
+        {
+            "treatment": ["A", "A", "A", "A"],
+            "sample_type": ["PBMC", "PBMC", "PBMC", "PBMC"],
+            "time_from_treatment_start": [0, 0, 0, 0],
+            "sex": ["F", "M", "F", "M"],
+            "age": [34, 34, 50, 50],
+            "project": ["P1", "P1", "P2", "P2"],
+            "value": [1, 2, 3, 4],
+        }
+    )
+
+    out = rp.apply_filters(
+        df,
+        selected_treatments=[],
+        selected_sample_types=[],
+        selected_time_from_treatment_start=[],
+        selected_sexes=["F"],
+        selected_ages=[34],
+        selected_projects=["P1"],
+    )
+
+    assert len(out) == 1
+    assert out.iloc[0]["sex"] == "F"
+    assert out.iloc[0]["age"] == 34
+    assert out.iloc[0]["project"] == "P1"
+    assert out.iloc[0]["value"] == 1
 
 
 def test_prepare_response_plot_df_drops_null_response_and_orders_populations() -> None:
@@ -85,6 +134,9 @@ def test_prepare_response_plot_df_drops_null_response_and_orders_populations() -
             "treatment": ["A", "A", "A", "A"],
             "sample_type": ["PBMC", "PBMC", "PBMC", "PBMC"],
             "time_from_treatment_start": [0, 0, 0, 0],
+            "sex": ["F", "F", "M", "M"],
+            "age": [34, 34, 45, 45],
+            "project": ["P1", "P1", "P2", "P2"],
             "response": ["yes", None, "no", "no"],
             "population": ["nk_cell", "b_cell", "b_cell", "cd4_t_cell"],
             "percentage": [10.0, 20.0, 30.0, 40.0],
@@ -96,6 +148,9 @@ def test_prepare_response_plot_df_drops_null_response_and_orders_populations() -
         selected_treatments=["A"],
         selected_sample_types=["PBMC"],
         selected_time_from_treatment_start=[],
+        selected_sexes=[],
+        selected_ages=[],
+        selected_projects=[],
     )
 
     # one row had response=None and should be dropped
@@ -119,6 +174,9 @@ def test_prepare_response_plot_df_empty_selection_means_no_filtering() -> None:
             "treatment": ["A", "B"],
             "sample_type": ["PBMC", "TIL"],
             "time_from_treatment_start": [0, 7],
+            "sex": ["F", "M"],
+            "age": [34, 45],
+            "project": ["P1", "P2"],
             "response": ["yes", "no"],
             "population": ["b_cell", "nk_cell"],
             "percentage": [10.0, 20.0],
@@ -130,6 +188,9 @@ def test_prepare_response_plot_df_empty_selection_means_no_filtering() -> None:
         selected_treatments=[],
         selected_sample_types=[],
         selected_time_from_treatment_start=[],
+        selected_sexes=[],
+        selected_ages=[],
+        selected_projects=[],
     )
 
     assert len(plot_df) == 2
