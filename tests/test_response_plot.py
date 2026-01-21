@@ -171,63 +171,6 @@ def test_apply_filters_filters_response_only() -> None:
     assert out["value"].tolist() == [1, 3]
 
 
-def test_prepare_response_plot_df_drops_null_response_and_orders_populations() -> None:
-    """`prepare_response_plot_df` drops null responses and produces an ordered categorical `population` column."""
-    summary_meta = pd.DataFrame(
-        {
-            "sample": ["S1", "S1", "S2", "S2"],
-            "treatment": ["A", "A", "A", "A"],
-            "sample_type": ["PBMC", "PBMC", "PBMC", "PBMC"],
-            "time_from_treatment_start": [0, 0, 0, 0],
-            "condition": ["melanoma", "melanoma", "melanoma", "melanoma"],
-            "sex": ["F", "F", "M", "M"],
-            "age": [34, 34, 45, 45],
-            "project": ["P1", "P1", "P2", "P2"],
-            "response": ["yes", None, "no", "no"],
-            "population": ["nk_cell", "b_cell", "b_cell", "cd4_t_cell"],
-            "percentage": [10.0, 20.0, 30.0, 40.0],
-        }
-    )
-
-    plot_df, populations = rp.prepare_response_plot_df(summary_meta)
-
-    # one row had response=None and should be dropped
-    assert len(plot_df) == 3
-    assert plot_df["response"].isna().sum() == 0
-
-    # populations should be sorted unique strings
-    assert populations == ["b_cell", "cd4_t_cell", "nk_cell"]
-
-    # population column should be an ordered categorical with those categories
-    assert str(plot_df["population"].dtype) == "category"
-    assert list(plot_df["population"].cat.categories) == populations
-    assert bool(plot_df["population"].cat.ordered) is True
-
-
-def test_prepare_response_plot_df_empty_selection_means_no_filtering() -> None:
-    """`prepare_response_plot_df` does not apply any filtering."""
-    summary_meta = pd.DataFrame(
-        {
-            "sample": ["S1", "S2"],
-            "treatment": ["A", "B"],
-            "sample_type": ["PBMC", "TIL"],
-            "time_from_treatment_start": [0, 7],
-            "condition": ["healthy", "melanoma"],
-            "sex": ["F", "M"],
-            "age": [34, 45],
-            "project": ["P1", "P2"],
-            "response": ["yes", "no"],
-            "population": ["b_cell", "nk_cell"],
-            "percentage": [10.0, 20.0],
-        }
-    )
-
-    plot_df, populations = rp.prepare_response_plot_df(summary_meta)
-
-    assert len(plot_df) == 2
-    assert populations == ["b_cell", "nk_cell"]
-
-
 def test_responder_boxplot_spec_uses_expected_fields() -> None:
     """`responder_boxplot_spec` encodes the expected fields for the boxplot and mean overlay."""
     spec = rp.responder_boxplot_spec()

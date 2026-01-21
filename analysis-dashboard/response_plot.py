@@ -80,39 +80,6 @@ def get_patient_count(
         filtered = filtered[filtered["response"].isin(selected_responses)]
     return filtered["subject"].nunique()
 
-
-def prepare_response_plot_df(
-    summary_meta: pd.DataFrame,
-) -> tuple[pd.DataFrame, list[str]]:
-    """Prepare a DataFrame for responder vs non-responder boxplots.
-
-    Applies treatment/sample-type filters, drops rows
-    with null response labels, and makes `population` an ordered
-    categorical column for stable plotting.
-
-    Args:
-        summary_meta: Long-format per-sample/per-population summary DataFrame
-            with sample metadata. Expected columns include: `treatment`,
-            `sample_type`, `response`, and `population`.
-    Returns:
-        A tuple of:
-        - plot_df: Filtered DataFrame containing an ordered categorical `population` column.
-        - populations: The ordered list of population names used as categories.
-    """
-
-    plot_df = summary_meta.dropna(subset=["response"])
-
-    populations = (
-        plot_df["population"].dropna().astype(str).sort_values().unique().tolist()
-    )
-    plot_df = plot_df.copy()
-    plot_df["population"] = pd.Categorical(
-        plot_df["population"], categories=populations, ordered=True
-    )
-
-    return plot_df, populations
-
-
 def responder_boxplot_spec() -> dict:
     """Return the Vega-Lite spec used to render responder boxplots.
 
