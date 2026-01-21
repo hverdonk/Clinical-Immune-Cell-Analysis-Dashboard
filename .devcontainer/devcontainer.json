@@ -1,16 +1,7 @@
 {
   "name": "Clinical Immune Cell Analysis Dashboard",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
-  "containerEnv": {
-    "PIP_DISABLE_PIP_VERSION_CHECK": "1",
-    "PIP_NO_INPUT": "1",
-    "PIP_PREFER_BINARY": "1",
-    "PIP_CACHE_DIR": "/home/vscode/.cache/pip"
-  },
-  "mounts": [
-    "source=pip-cache,target=/home/vscode/.cache/pip,type=volume"
-  ],
-  "postCreateCommand": "mkdir -p $PIP_CACHE_DIR && python -m pip install -U pip setuptools wheel && python -m pip install --prefer-binary -r requirements.txt",
+  "postCreateCommand": "python -m pip install -r requirements.txt && python analysis-dashboard/load_cell_counts.py",
   "forwardPorts": [8501],
   "portsAttributes": {
     "8501": {
