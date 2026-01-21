@@ -111,7 +111,12 @@ def responder_boxplot_spec() -> dict:
             {
             "mark": { "type": "boxplot", "extent": 1.5 },
             "encoding": {
-                "x": { "field": "population", "type": "nominal", "title": "Cell population" },
+                "x": {
+                    "field": "population",
+                    "type": "nominal",
+                    "title": "Cell population",
+                    "axis": {"labelAngle": 0},
+                },
                 "xOffset": { "field": "response" },
                 "y": {
                     "field": "percentage",
@@ -132,7 +137,7 @@ def responder_boxplot_spec() -> dict:
                 "size": 60
             },
             "encoding": {
-                "x": { "field": "population", "type": "nominal" },
+                "x": {"field": "population", "type": "nominal", "axis": {"labelAngle": 0}},
                 "xOffset": { "field": "response" },
                 "y": {
                     "aggregate": "mean",
@@ -151,6 +156,21 @@ def responder_boxplot_spec() -> dict:
             }
         ],
         "config": {
+            "background": "white",
+            "view": {"stroke": "transparent"},
+            "axis": {
+                "labelColor": "black",
+                "titleColor": "black",
+                "labelFontSize": 14,
+                "titleFontSize": 16,
+            },
+            "legend": {
+                "labelColor": "black",
+                "titleColor": "black",
+                "labelFontSize": 14,
+                "titleFontSize": 16,
+            },
+            "title": {"color": "black"},
             "boxplot": { "size": 18 }
         }
     }
