@@ -348,7 +348,7 @@ def main() -> None:
         # Style significant rows
         def highlight_significant(row):
             if row["p_adj"] < 0.05:
-                return ["font-weight: bold; background-color: #90EE90"] * len(row)
+                return ["font-weight: bold; background-color: rgba(173, 216, 230, 0.5)"] * len(row)
             return [""] * len(row)
         
         styled_results = results_df.style.apply(highlight_significant, axis=1)
