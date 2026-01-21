@@ -4,15 +4,17 @@ Interactive Streamlit dashboard for exploring immune cell population relative fr
 
 ## Dashboard
 
-- **Live dashboard**: http://0.0.0.0:8501/
+- **Live dashboard**: http://localhost:8501/
 - **Run in GitHub Codespaces**: after starting the app (instructions below), open the forwarded port for Streamlit (default `8501`).
   - In Codespaces: **Ports** tab -> find `8501` -> **Open in Browser**.
 
-## Quickstart (GitHub Codespaces)
+## Quickstart (Local or GitHub Codespaces)
 
 These steps reproduce the local database build and dashboard outputs using the committed example dataset in `analysis-dashboard/data/cell-count.csv`.
 
 ### 1) Start the dashboard (one command)
+
+The dashboard should automatically install all dependencies and start the app. However, if you want to run it manually, use the following commands:
 
 ```bash
 make run
@@ -25,6 +27,14 @@ This will:
 - Start Streamlit on port `8501`.
 
 Open the forwarded port `8501` in Codespaces to view the app.
+
+### Manual setup (without Makefile)
+
+```bash
+python -m pip install -r requirements.txt
+python analysis-dashboard/load_cell_counts.py
+streamlit run analysis-dashboard/streamlit_app.py --server.port 8501
+```
 
 ### 2) Run tests
 

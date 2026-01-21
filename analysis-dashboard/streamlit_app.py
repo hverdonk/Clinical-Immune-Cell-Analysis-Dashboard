@@ -240,9 +240,16 @@ def main() -> None:
 
 
     st.subheader("Data Overview")
+    st.caption(
+        "Quick snapshot of the filtered dataset, including project coverage and the per-sample "
+        "metadata used in downstream visualizations."
+    )
 
     # Emoji grid of project counts
     if {"project", "sample", "time_from_treatment_start"}.issubset(summary_meta_filtered.columns):
+        st.caption(
+            "Project tiles summarize how many unique samples are represented in each project, given the current filters."
+        )
         samples_per_project = (
             summary_meta_filtered.groupby("project")["sample"]
             .nunique()
@@ -304,6 +311,10 @@ def main() -> None:
 
 
     # Summary table
+    st.caption(
+        "Row-level summary of each sample and cell population after filtering. Use this table to "
+        "inspect metadata, response labels, and relative frequencies." 
+    )
     st.dataframe(
         summary_meta_filtered.drop(columns=["prop"]),
         width='stretch',
@@ -315,7 +326,9 @@ def main() -> None:
 
     st.subheader("Responders vs Non-responders")
     st.caption(
-        "Boxplots show per-sample relative frequencies (%) for each immune cell population, split by response."
+        "Boxplots compare per-sample relative frequencies (%) across response groups. Each box shows the "
+        "median and interquartile range for a population, with individual samples reflected in the distribution. Mean "
+        "values are shown on hover over the dot at the center of the box."
     )
 
     plot_df = summary_meta_filtered.dropna(subset=["response"])
@@ -332,10 +345,8 @@ def main() -> None:
 
     st.subheader("Significant differences")
     st.caption(
-        """Used a mixed effects model to compare responder vs non-responder relative frequencies for each immune cell population. 
-        The mixed effects model accounts for non-independence of samples taken from the same patient, unlike paired t-tests, 
-        Wilcoxon signed-rank tests, or similar tests that assume independence of samples. 
-        Adjusted p-values using the Benjamini-Hochberg procedure."""
+        """Statistical summary of responder vs non-responder differences by population. A mixed-effects model is used to 
+        account for repeated samples per patient, and p-values are adjusted with the Benjamini-Hochberg procedure."""
     )
     
     try:
