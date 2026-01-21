@@ -49,6 +49,50 @@ def main() -> None:
         )
         st.stop()
 
+    st.subheader("Filters")
+
+    # Add sex filter with counts of number of patients in each sex for the current filters
+    if "sex_filter" not in st.session_state:
+        st.session_state.sex_filter = None
+
+    def _toggle_sex_filter(selected: str) -> None:
+        if st.session_state.sex_filter == selected:
+            st.session_state.sex_filter = None
+        else:
+            st.session_state.sex_filter = selected
+
+    sex_filter_col_1, sex_filter_col_2 = st.columns(2)
+    with sex_filter_col_1:
+        st.button(
+            "Male ♂",
+            type="primary" if st.session_state.sex_filter == "M" else "secondary",
+            help="Filter to males",
+            use_container_width=True,
+            key="sex_filter_male",
+            on_click=_toggle_sex_filter,
+            args=("M",),
+        )
+
+    with sex_filter_col_2:
+        st.button(
+            "Female ♀",
+            type="primary" if st.session_state.sex_filter == "F" else "secondary",
+            help="Filter to females",
+            use_container_width=True,
+            key="sex_filter_female",
+            on_click=_toggle_sex_filter,
+            args=("F",),
+        )
+
+    if st.session_state.sex_filter == "M":
+        summary_meta = summary_meta[
+            summary_meta["sex"].astype(str).str.lower().isin(["m", "male"])
+        ]
+    elif st.session_state.sex_filter == "F":
+        summary_meta = summary_meta[
+            summary_meta["sex"].astype(str).str.lower().isin(["f", "female"])
+        ]
+
     st.subheader("Data Overview")
     st.dataframe(
         summary_meta,
@@ -86,10 +130,20 @@ def main() -> None:
         default=default_sample_types,
     )
 
+    selected_sexes: list[str] = ["M", "F"]
+    if st.session_state.sex_filter == "M":
+        selected_sexes = ["M"]
+    elif st.session_state.sex_filter == "F":
+        selected_sexes = ["F"]
+
     plot_df, populations = prepare_response_plot_df(
         summary_meta,
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
+        selected_time_from_treatment_start=[],
+        selected_sexes=selected_sexes,
+        selected_ages=[],
+        selected_projects=[],
     )
 
     if plot_df.empty:
