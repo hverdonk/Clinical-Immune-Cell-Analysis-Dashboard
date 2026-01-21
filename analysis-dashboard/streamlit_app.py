@@ -10,7 +10,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from db_summary import load_summary_with_sample_metadata_from_db
-from response_plot import apply_filters, get_patient_count,prepare_response_plot_df, responder_boxplot_spec
+from response_plot import apply_filters, get_patient_count, responder_boxplot_spec
 from stats_utils import analyze_all_populations
 
 def _build_multiselect_filter(
@@ -232,8 +232,72 @@ def main() -> None:
 
 
     st.subheader("Data Overview")
+
+    # Emoji grid of project counts
+    if {"project", "sample", "time_from_treatment_start"}.issubset(summary_meta_filtered.columns):
+        samples_per_project = (
+            summary_meta_filtered.groupby("project")["sample"]
+            .nunique()
+            .sort_values(ascending=False)
+            .reset_index(name="samples")
+        )
+
+        emoji_cycle = [
+            "🧪",
+            "🧫",
+            "🧬",
+            "🔬",
+            "📊",
+            "📈",
+            "📉",
+            "🧰",
+            "🧠",
+            "🩸",
+            "🫁",
+            "🧻",
+        ]
+
+        projects = samples_per_project["project"].astype(str).tolist()
+        project_to_emoji = {
+            project: emoji_cycle[i % len(emoji_cycle)] for i, project in enumerate(projects)
+        }
+
+        cols_per_row = min(6, max(1, len(projects)))
+        for row_start in range(0, len(projects), cols_per_row):
+            row_projects = projects[row_start : row_start + cols_per_row]
+            cols = st.columns(len(row_projects))
+            for col, project in zip(cols, row_projects):
+                samples = int(
+                    samples_per_project.loc[
+                        samples_per_project["project"].astype(str) == project, "samples"
+                    ].iloc[0]
+                )
+                with col:
+                    st.markdown(
+                        f"<div style='text-align: center; font-size: 42px;'>"
+                        f"{project_to_emoji[project]}"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        f"<div style='text-align: center; font-weight: 600;'>"
+                        f"{project}"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        f"<div style='text-align: center;'>"
+                        f"{samples} samples"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+
+        st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
+
+
+    # Summary table
     st.dataframe(
-        summary_meta_filtered,
+        summary_meta_filtered.drop(columns=["prop"]),
         width='stretch',
         hide_index=True,
         column_config={
@@ -245,10 +309,6 @@ def main() -> None:
     st.caption(
         "Boxplots show per-sample relative frequencies (%) for each immune cell population, split by response."
     )
-
-    # plot_df, populations = prepare_response_plot_df(
-    #     summary_meta_filtered,
-    # )
 
     plot_df = summary_meta_filtered.dropna(subset=["response"])
 
