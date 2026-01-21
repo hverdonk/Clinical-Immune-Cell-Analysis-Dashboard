@@ -34,6 +34,41 @@ def _build_multiselect_filter(
     default = [default_value] if default_value and default_value in options else options
     return st.multiselect(label, options=options, default=default)
 
+def _render_toggle_buttons(
+    col1_label: str,
+    col1_count: int,
+    col1_value: str,
+    col1_help: str,
+    col2_label: str,
+    col2_count: int,
+    col2_value: str,
+    col2_help: str,
+    session_key: str,
+    toggle_func: callable,
+    key_prefix: str,
+) -> None:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.button(
+            f"{col1_label} ({col1_count} patients)",
+            type="primary" if getattr(st.session_state, session_key) == col1_value else "secondary",
+            help=col1_help,
+            use_container_width=True,
+            key=f"{key_prefix}_{col1_value}",
+            on_click=toggle_func,
+            args=(col1_value,),
+        )
+    with col2:
+        st.button(
+            f"{col2_label} ({col2_count} patients)",
+            type="primary" if getattr(st.session_state, session_key) == col2_value else "secondary",
+            help=col2_help,
+            use_container_width=True,
+            key=f"{key_prefix}_{col2_value}",
+            on_click=toggle_func,
+            args=(col2_value,),
+        )
+
 
 def main() -> None:
     """Run the Streamlit application UI.
@@ -83,15 +118,38 @@ def main() -> None:
         summary_meta, "sample_type", "Sample type", default_value="PBMC"
     )
 
-    # add sex filter with counts of number of patients in each sex for the current filters
-    selected_sexes: list[str] = ["M", "F"]
-    if st.session_state.sex_filter == "M":
-        selected_sexes = ["M"]
-    elif st.session_state.sex_filter == "F":
-        selected_sexes = ["F"]
+    selected_condition = _build_multiselect_filter(
+        summary_meta, "condition", "Condition", default_value="melanoma"
+    )
 
+     # add sex filter with counts of number of patients in each sex for the current filters
     if "sex_filter" not in st.session_state:
         st.session_state.sex_filter = None
+
+    sex_filter = st.session_state.get("sex_filter")
+
+    selected_sexes: list[str] = []
+    if sex_filter == "M":
+        selected_sexes = ["M", "m", "Male", "male"]
+    elif sex_filter == "F":
+        selected_sexes = ["F", "f", "Female", "female"]
+
+    if "response_filter" not in st.session_state:
+        st.session_state.response_filter = None
+
+    response_filter = st.session_state.get("response_filter")
+
+    def _toggle_response_filter(selected: str) -> None:
+        if st.session_state.response_filter == selected:
+            st.session_state.response_filter = None
+        else:
+            st.session_state.response_filter = selected
+
+    selected_responses: list[str] = []
+    if response_filter == "yes":
+        selected_responses = ["yes", "Yes", "YES"]
+    elif response_filter == "no":
+        selected_responses = ["no", "No", "NO"]
 
     def _toggle_sex_filter(selected: str) -> None:
         if st.session_state.sex_filter == selected:
@@ -99,41 +157,79 @@ def main() -> None:
         else:
             st.session_state.sex_filter = selected
 
+    summary_meta_base = apply_filters(
+        summary_meta,
+        selected_treatments=selected_treatments,
+        selected_sample_types=selected_sample_types,
+        selected_condition=selected_condition,
+        selected_sexes=[],
+        selected_ages=[],
+        selected_projects=[],
+        selected_responses=[],
+    )
+
+    # Sex counts should reflect the current response selection (if any)
+    male_patient_count = get_patient_count(
+        summary_meta_base,
+        selected_sexes=["M", "m", "Male", "male"],
+        selected_responses=selected_responses,
+    )
+    female_patient_count = get_patient_count(
+        summary_meta_base,
+        selected_sexes=["F", "f", "Female", "female"],
+        selected_responses=selected_responses,
+    )
+
+    # Response counts should reflect the current sex selection (if any)
+    responder_patient_count = get_patient_count(
+        summary_meta_base,
+        selected_sexes=selected_sexes,
+        selected_responses=["yes", "Yes", "YES"],
+    )
+    non_responder_patient_count = get_patient_count(
+        summary_meta_base,
+        selected_sexes=selected_sexes,
+        selected_responses=["no", "No", "NO"],
+    )
+
     summary_meta_filtered = apply_filters(
         summary_meta,
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
-        selected_time_from_treatment_start=[],
+        selected_condition=selected_condition,
         selected_sexes=selected_sexes,
         selected_ages=[],
         selected_projects=[],
+        selected_responses=selected_responses,
     )
 
-    male_patient_count = get_patient_count(summary_meta_filtered, selected_sexes=["M"])
-    female_patient_count = get_patient_count(summary_meta_filtered, selected_sexes=["F"])
+    _render_toggle_buttons(
+        col1_label="Male", 
+        col1_count=male_patient_count, 
+        col1_value="M", 
+        col1_help="Filter to males", 
+        col2_label="Female", 
+        col2_count=female_patient_count, 
+        col2_value="F", col2_help="Filter to females", 
+        session_key="sex_filter", 
+        toggle_func=_toggle_sex_filter, 
+        key_prefix="sex_filter"
+    )
 
-    sex_filter_col_1, sex_filter_col_2 = st.columns(2)
-    with sex_filter_col_1:
-        st.button(
-            f"Male ♂ ({male_patient_count} patients)",
-            type="primary" if st.session_state.sex_filter == "M" else "secondary",
-            help="Filter to males",
-            use_container_width=True,
-            key="sex_filter_male",
-            on_click=_toggle_sex_filter,
-            args=("M",),
-        )
+    _render_toggle_buttons(
+        col1_label="Responders",
+        col1_count=responder_patient_count,
+        col1_value="yes",
+        col1_help="Filter to patients responding to selected drug.",
+        col2_label="Non-responders",
+        col2_count=non_responder_patient_count,
+        col2_value="no",
+        col2_help="Filter to patients not responding to selected drug.",
+        session_key="response_filter",
+        toggle_func=_toggle_response_filter,
+        key_prefix="response_filter"
+    )
 
-    with sex_filter_col_2:
-        st.button(
-            f"Female ♀ ({female_patient_count} patients)",
-            type="primary" if st.session_state.sex_filter == "F" else "secondary",
-            help="Filter to females",
-            use_container_width=True,
-            key="sex_filter_female",
-            on_click=_toggle_sex_filter,
-            args=("F",),
-        )
 
     st.subheader("Data Overview")
     st.dataframe(
@@ -150,15 +246,11 @@ def main() -> None:
         "Boxplots show per-sample relative frequencies (%) for each immune cell population, split by response."
     )
 
-    plot_df, populations = prepare_response_plot_df(
-        summary_meta_filtered,
-        selected_treatments=[],
-        selected_sample_types=[],
-        selected_time_from_treatment_start=[],
-        selected_sexes=selected_sexes,
-        selected_ages=[],
-        selected_projects=[],
-    )
+    # plot_df, populations = prepare_response_plot_df(
+    #     summary_meta_filtered,
+    # )
+
+    plot_df = summary_meta_filtered.dropna(subset=["response"])
 
     if plot_df.empty:
         st.info("No data available for the current filters (and recognized response labels).")
