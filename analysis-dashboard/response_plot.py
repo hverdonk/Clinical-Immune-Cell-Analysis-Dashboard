@@ -43,6 +43,33 @@ def apply_filters(
         out = out[out["project"].isin(selected_projects)]
     return out
 
+def get_patient_count(
+    df: pd.DataFrame,
+    *,
+    selected_sexes: list[str] | None = None,
+    selected_ages: list[int] | None = None,
+    selected_projects: list[str] | None = None,
+) -> int:
+    """Get the number of unique patients in the (filtered) DataFrame.
+    
+    Args:
+        df: DataFrame to get patient count from.
+        selected_sexes: If provided, only count patients with these sexes.
+        selected_ages: If provided, only count patients with these ages.
+        selected_projects: If provided, only count patients in these projects.
+    
+    Returns:
+        Number of unique patients in the DataFrame.
+    """
+    filtered = df[df["time_from_treatment_start"] == 0]
+    if selected_sexes:
+        filtered = filtered[filtered["sex"].isin(selected_sexes)]
+    if selected_ages:
+        filtered = filtered[filtered["age"].isin(selected_ages)]
+    if selected_projects:
+        filtered = filtered[filtered["project"].isin(selected_projects)]
+    return filtered["subject"].nunique()
+
 
 def prepare_response_plot_df(
     summary_meta: pd.DataFrame,
@@ -75,15 +102,15 @@ def prepare_response_plot_df(
         - plot_df: Filtered DataFrame containing an ordered categorical `population` column.
         - populations: The ordered list of population names used as categories.
     """
-    plot_df = apply_filters(
-        summary_meta,
-        selected_treatments=selected_treatments,
-        selected_sample_types=selected_sample_types,
-        selected_time_from_treatment_start=selected_time_from_treatment_start,
-        selected_sexes=selected_sexes,
-        selected_ages=selected_ages,
-        selected_projects=selected_projects,
-    )
+    # plot_df = apply_filters(
+    #     summary_meta,
+    #     selected_treatments=selected_treatments,
+    #     selected_sample_types=selected_sample_types,
+    #     selected_time_from_treatment_start=selected_time_from_treatment_start,
+    #     selected_sexes=selected_sexes,
+    #     selected_ages=selected_ages,
+    #     selected_projects=selected_projects,
+    # )
 
     plot_df = plot_df.dropna(subset=["response"])
 

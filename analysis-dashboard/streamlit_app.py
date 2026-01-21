@@ -10,8 +10,30 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from db_summary import load_summary_with_sample_metadata_from_db
-from response_plot import prepare_response_plot_df, responder_boxplot_spec
+from response_plot import apply_filters, get_patient_count,prepare_response_plot_df, responder_boxplot_spec
 from stats_utils import analyze_all_populations
+
+def _build_multiselect_filter(
+    df: pd.DataFrame,
+    column: str,
+    label: str,
+    default_value: str | None = None,
+) -> list[str]:
+    """Build a multiselect filter for a DataFrame column.
+    
+    Args:
+        df: DataFrame containing the column to filter.
+        column: Name of the column to create filter for.
+        label: Label to display for the multiselect widget.
+        default_value: If present in options, use as default selection.
+    
+    Returns:
+        List of selected values from the multiselect.
+    """
+    options = df[column].dropna().astype(str).sort_values().unique().tolist()
+    default = [default_value] if default_value and default_value in options else options
+    return st.multiselect(label, options=options, default=default)
+
 
 def main() -> None:
     """Run the Streamlit application UI.
@@ -51,7 +73,23 @@ def main() -> None:
 
     st.subheader("Filters")
 
-    # Add sex filter with counts of number of patients in each sex for the current filters
+    # add dropdown for users to select treatments (default to "miraclib" if present)
+    selected_treatments = _build_multiselect_filter(
+        summary_meta, "treatment", "Treatment", default_value="miraclib"
+    )
+
+    # add dropdown for users to select sample types (default to "PBMC" if present)
+    selected_sample_types = _build_multiselect_filter(
+        summary_meta, "sample_type", "Sample type", default_value="PBMC"
+    )
+
+    # add sex filter with counts of number of patients in each sex for the current filters
+    selected_sexes: list[str] = ["M", "F"]
+    if st.session_state.sex_filter == "M":
+        selected_sexes = ["M"]
+    elif st.session_state.sex_filter == "F":
+        selected_sexes = ["F"]
+
     if "sex_filter" not in st.session_state:
         st.session_state.sex_filter = None
 
@@ -61,10 +99,23 @@ def main() -> None:
         else:
             st.session_state.sex_filter = selected
 
+    summary_meta_filtered = apply_filters(
+        summary_meta,
+        selected_treatments=selected_treatments,
+        selected_sample_types=selected_sample_types,
+        selected_time_from_treatment_start=[],
+        selected_sexes=selected_sexes,
+        selected_ages=[],
+        selected_projects=[],
+    )
+
+    male_patient_count = get_patient_count(summary_meta_filtered, selected_sexes=["M"])
+    female_patient_count = get_patient_count(summary_meta_filtered, selected_sexes=["F"])
+
     sex_filter_col_1, sex_filter_col_2 = st.columns(2)
     with sex_filter_col_1:
         st.button(
-            "Male ♂",
+            f"Male ♂ ({male_patient_count} patients)",
             type="primary" if st.session_state.sex_filter == "M" else "secondary",
             help="Filter to males",
             use_container_width=True,
@@ -75,7 +126,7 @@ def main() -> None:
 
     with sex_filter_col_2:
         st.button(
-            "Female ♀",
+            f"Female ♀ ({female_patient_count} patients)",
             type="primary" if st.session_state.sex_filter == "F" else "secondary",
             help="Filter to females",
             use_container_width=True,
@@ -84,18 +135,9 @@ def main() -> None:
             args=("F",),
         )
 
-    if st.session_state.sex_filter == "M":
-        summary_meta = summary_meta[
-            summary_meta["sex"].astype(str).str.lower().isin(["m", "male"])
-        ]
-    elif st.session_state.sex_filter == "F":
-        summary_meta = summary_meta[
-            summary_meta["sex"].astype(str).str.lower().isin(["f", "female"])
-        ]
-
     st.subheader("Data Overview")
     st.dataframe(
-        summary_meta,
+        summary_meta_filtered,
         width='stretch',
         hide_index=True,
         column_config={
@@ -108,38 +150,10 @@ def main() -> None:
         "Boxplots show per-sample relative frequencies (%) for each immune cell population, split by response."
     )
 
-    # add dropdown for users to select treatments (default to "miraclib" if present)
-    treatments = (
-        summary_meta["treatment"].dropna().astype(str).sort_values().unique().tolist()
-    )
-    default_treatments = ["miraclib"] if "miraclib" in treatments else treatments
-    selected_treatments = st.multiselect(
-        "Treatment",
-        options=treatments,
-        default=default_treatments,
-    )
-
-    # add dropdown for users to select sample types (default to "PBMC" if present)
-    sample_types = (
-        summary_meta["sample_type"].dropna().astype(str).sort_values().unique().tolist()
-    )
-    default_sample_types = ["PBMC"] if "PBMC" in sample_types else sample_types
-    selected_sample_types = st.multiselect(
-        "Sample type",
-        options=sample_types,
-        default=default_sample_types,
-    )
-
-    selected_sexes: list[str] = ["M", "F"]
-    if st.session_state.sex_filter == "M":
-        selected_sexes = ["M"]
-    elif st.session_state.sex_filter == "F":
-        selected_sexes = ["F"]
-
     plot_df, populations = prepare_response_plot_df(
-        summary_meta,
-        selected_treatments=selected_treatments,
-        selected_sample_types=selected_sample_types,
+        summary_meta_filtered,
+        selected_treatments=[],
+        selected_sample_types=[],
         selected_time_from_treatment_start=[],
         selected_sexes=selected_sexes,
         selected_ages=[],
