@@ -156,15 +156,18 @@ def load_csv_into_db(csv_path: Path, db_path: Path) -> None:
     if not csv_path.exists():
         raise FileNotFoundError(str(csv_path))
 
+    print(f"Loading CSV data from {csv_path} into {db_path}...")
     conn = connect(db_path)
     try:
         initialize_schema(conn)
+        print("Initialized database schema.")
 
         project_cache: Dict[Tuple[str, str], int] = {}
         subject_cache: Dict[Tuple[str, str], int] = {}
         population_cache: Dict[Tuple[str, str], int] = {}
 
         # Cache population IDs
+        print("Caching cell population IDs...")
         for p in CELL_POPULATIONS:
             pop_id = conn.execute(
                 "SELECT id FROM cell_population WHERE name = ?",
@@ -195,8 +198,12 @@ def load_csv_into_db(csv_path: Path, db_path: Path) -> None:
             if missing:
                 raise ValueError(f"CSV missing required columns: {sorted(missing)}")
 
+            row_count = 0
             with conn:
                 for row in reader:
+                    row_count += 1
+                    if row_count % 50 == 0:
+                        print(f"Processed {row_count} rows...")
                     project_name = row["project"].strip()
                     subject_code = row["subject"].strip()
 
@@ -290,6 +297,8 @@ def load_csv_into_db(csv_path: Path, db_path: Path) -> None:
                         """,
                         counts_to_insert,
                     )
+
+            print(f"Completed loading {row_count} rows.")
 
     finally:
         conn.close()
