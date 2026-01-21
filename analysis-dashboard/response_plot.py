@@ -113,26 +113,50 @@ def responder_boxplot_spec() -> dict:
         `st.vega_lite_chart`.
     """
     return {
-        "mark": {"type": "boxplot", "extent": 1.5},
-        "encoding": {
-            "x": {"field": "population", "type": "nominal", "title": "Cell population"},
-            "xOffset": {"field": "response"},
-            "y": {
-                "field": "percentage",
-                "type": "quantitative",
-                "title": "Relative frequency (%)",
+        "layer": [
+            {
+            "mark": { "type": "boxplot", "extent": 1.5 },
+            "encoding": {
+                "x": { "field": "population", "type": "nominal", "title": "Cell population" },
+                "xOffset": { "field": "response" },
+                "y": {
+                    "field": "percentage",
+                    "type": "quantitative",
+                    "title": "Relative frequency (%)"
+                },
+                "color": {
+                    "field": "response",
+                    "type": "nominal",
+                    # "title": "Response"
+                }
+            }
             },
-            "color": {
-                "field": "response",
-                "type": "nominal",
-                "title": "Response",
+            {
+            "mark": {
+                "type": "point",
+                "filled": True,
+                "size": 60
             },
-            "tooltip": [
-                {"field": "sample", "type": "nominal"},
-                {"field": "population", "type": "nominal"},
-                {"field": "response", "type": "nominal"},
-                {"field": "percentage", "type": "quantitative", "format": ".2f"},
-            ],
-        },
-        "config": {"boxplot": {"size": 18}},
+            "encoding": {
+                "x": { "field": "population", "type": "nominal" },
+                "xOffset": { "field": "response" },
+                "y": {
+                    "aggregate": "mean",
+                    "field": "percentage",
+                    "type": "quantitative"
+                },
+                # "color": {
+                # "field": "response",
+                # "type": "nominal"
+                # },
+                "color": "#000000",
+                "tooltip": [
+                { "aggregate": "mean", "field": "percentage", "type": "quantitative", "format": ".2f", "title": "Mean %" }
+                ]
+            }
+            }
+        ],
+        "config": {
+            "boxplot": { "size": 18 }
+        }
     }
