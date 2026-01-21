@@ -8,10 +8,11 @@ def apply_filters(
     *,
     selected_treatments: list[str],
     selected_sample_types: list[str],
-    selected_time_from_treatment_start: list[str],
+    selected_condition: list[str],
     selected_sexes: list[str],
     selected_ages: list[int],
     selected_projects: list[str],
+    selected_responses: list[str],
 ) -> pd.DataFrame:
     """Filter a summary DataFrame by treatment and sample type.
 
@@ -22,8 +23,11 @@ def apply_filters(
             is applied.
         selected_sample_types: Sample types to keep. If empty, no sample type
             filtering is applied.
-        selected_time_from_treatment_start: Time from treatment start to keep. If empty, no time from treatment start filtering is applied.
-
+        selected_condition: Condition (e.g., "healthy" or "melanoma") to keep. If empty, no condition filtering is applied.
+        selected_sexes: Sexes to keep. If empty, no sex filtering is applied.
+        selected_ages: Ages to keep. If empty, no age filtering is applied.
+        selected_projects: Projects to keep. If empty, no project filtering is applied.
+        selected_responses: Responses to keep. If empty, no response filtering is applied.
     Returns:
         A filtered copy of `df` containing only the selected treatments and/or
         sample types.
@@ -33,14 +37,16 @@ def apply_filters(
         out = out[out["treatment"].isin(selected_treatments)]
     if selected_sample_types:
         out = out[out["sample_type"].isin(selected_sample_types)]
-    if selected_time_from_treatment_start:
-        out = out[out["time_from_treatment_start"].isin(selected_time_from_treatment_start)]
+    if selected_condition:
+        out = out[out["condition"].isin(selected_condition)]
     if selected_sexes:
         out = out[out["sex"].isin(selected_sexes)]
     if selected_ages:
         out = out[out["age"].isin(selected_ages)]
     if selected_projects:
         out = out[out["project"].isin(selected_projects)]
+    if selected_responses:
+        out = out[out["response"].isin(selected_responses)]
     return out
 
 def get_patient_count(
@@ -49,6 +55,7 @@ def get_patient_count(
     selected_sexes: list[str] | None = None,
     selected_ages: list[int] | None = None,
     selected_projects: list[str] | None = None,
+    selected_responses: list[str] | None = None,
 ) -> int:
     """Get the number of unique patients in the (filtered) DataFrame.
     
@@ -57,6 +64,7 @@ def get_patient_count(
         selected_sexes: If provided, only count patients with these sexes.
         selected_ages: If provided, only count patients with these ages.
         selected_projects: If provided, only count patients in these projects.
+        selected_responses: If provided, only count patients with these responses.
     
     Returns:
         Number of unique patients in the DataFrame.
@@ -68,18 +76,13 @@ def get_patient_count(
         filtered = filtered[filtered["age"].isin(selected_ages)]
     if selected_projects:
         filtered = filtered[filtered["project"].isin(selected_projects)]
+    if selected_responses:
+        filtered = filtered[filtered["response"].isin(selected_responses)]
     return filtered["subject"].nunique()
 
 
 def prepare_response_plot_df(
     summary_meta: pd.DataFrame,
-    *,
-    selected_treatments: list[str],
-    selected_sample_types: list[str],
-    selected_time_from_treatment_start: list[str],
-    selected_sexes: list[str],
-    selected_ages: list[int],
-    selected_projects: list[str],
 ) -> tuple[pd.DataFrame, list[str]]:
     """Prepare a DataFrame for responder vs non-responder boxplots.
 
@@ -91,28 +94,13 @@ def prepare_response_plot_df(
         summary_meta: Long-format per-sample/per-population summary DataFrame
             with sample metadata. Expected columns include: `treatment`,
             `sample_type`, `response`, and `population`.
-        selected_treatments: Treatments to include (empty means include all).
-        selected_sample_types: Sample types to include (empty means include all).
-        selected_time_from_treatment_start: Time from treatment start to include (empty means include all).
-        selected_sexes: Sexes to include (empty means include all).
-        selected_ages: Ages to include (empty means include all).
-        selected_projects: Projects to include (empty means include all).
     Returns:
         A tuple of:
         - plot_df: Filtered DataFrame containing an ordered categorical `population` column.
         - populations: The ordered list of population names used as categories.
     """
-    # plot_df = apply_filters(
-    #     summary_meta,
-    #     selected_treatments=selected_treatments,
-    #     selected_sample_types=selected_sample_types,
-    #     selected_time_from_treatment_start=selected_time_from_treatment_start,
-    #     selected_sexes=selected_sexes,
-    #     selected_ages=selected_ages,
-    #     selected_projects=selected_projects,
-    # )
 
-    plot_df = plot_df.dropna(subset=["response"])
+    plot_df = summary_meta.dropna(subset=["response"])
 
     populations = (
         plot_df["population"].dropna().astype(str).sort_values().unique().tolist()
