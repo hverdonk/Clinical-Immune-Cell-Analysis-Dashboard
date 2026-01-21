@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+def _coerce_str_to_numeric(values: list[str]) -> list[int]:
+    return pd.to_numeric(pd.Series(values), errors="coerce").dropna().tolist()
 
 def apply_filters(
     df: pd.DataFrame,
@@ -10,6 +12,7 @@ def apply_filters(
     selected_sample_types: list[str],
     selected_condition: list[str],
     selected_sexes: list[str],
+    selected_time_from_treatment_start: list[str],
     selected_ages: list[int],
     selected_projects: list[str],
     selected_responses: list[str],
@@ -25,6 +28,7 @@ def apply_filters(
             filtering is applied.
         selected_condition: Condition (e.g., "healthy" or "melanoma") to keep. If empty, no condition filtering is applied.
         selected_sexes: Sexes to keep. If empty, no sex filtering is applied.
+        selected_time_from_treatment_start: Time from treatment start to keep. If empty, no time from treatment start filtering is applied.
         selected_ages: Ages to keep. If empty, no age filtering is applied.
         selected_projects: Projects to keep. If empty, no project filtering is applied.
         selected_responses: Responses to keep. If empty, no response filtering is applied.
@@ -41,6 +45,14 @@ def apply_filters(
         out = out[out["condition"].isin(selected_condition)]
     if selected_sexes:
         out = out[out["sex"].isin(selected_sexes)]
+    if selected_time_from_treatment_start:
+        time_col = out["time_from_treatment_start"]
+        if pd.api.types.is_numeric_dtype(time_col):
+            selected_time_numeric = _coerce_str_to_numeric(selected_time_from_treatment_start)
+            out = out[time_col.isin(selected_time_numeric)]
+        else:
+            selected_time_str = [str(v) for v in selected_time_from_treatment_start]
+            out = out[time_col.astype(str).isin(selected_time_str)]
     if selected_ages:
         out = out[out["age"].isin(selected_ages)]
     if selected_projects:

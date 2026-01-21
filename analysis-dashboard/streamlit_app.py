@@ -31,7 +31,7 @@ def _build_multiselect_filter(
         List of selected values from the multiselect.
     """
     options = df[column].dropna().astype(str).sort_values().unique().tolist()
-    default = [default_value] if default_value and default_value in options else options
+    default = [default_value] if default_value and default_value in options else None
     return st.multiselect(label, options=options, default=default)
 
 def _render_toggle_buttons(
@@ -118,11 +118,17 @@ def main() -> None:
         summary_meta, "sample_type", "Sample type", default_value="PBMC"
     )
 
+    # add dropdown for users to select conditions (default to "melanoma" if present)
     selected_condition = _build_multiselect_filter(
         summary_meta, "condition", "Condition", default_value="melanoma"
     )
 
-     # add sex filter with counts of number of patients in each sex for the current filters
+    # add dropdown for users to select time from treatment start
+    selected_time_from_treatment_start = _build_multiselect_filter(
+        summary_meta, "time_from_treatment_start", "Time from treatment start"
+    )
+
+    # add sex filter with counts of number of patients in each sex for the current filters
     if "sex_filter" not in st.session_state:
         st.session_state.sex_filter = None
 
@@ -162,6 +168,7 @@ def main() -> None:
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
         selected_condition=selected_condition,
+        selected_time_from_treatment_start=[],
         selected_sexes=[],
         selected_ages=[],
         selected_projects=[],
@@ -197,6 +204,7 @@ def main() -> None:
         selected_treatments=selected_treatments,
         selected_sample_types=selected_sample_types,
         selected_condition=selected_condition,
+        selected_time_from_treatment_start=selected_time_from_treatment_start,
         selected_sexes=selected_sexes,
         selected_ages=[],
         selected_projects=[],
