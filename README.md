@@ -4,7 +4,7 @@ Interactive Streamlit dashboard for exploring immune cell population relative fr
 
 ## Dashboard
 
-- **Live dashboard**: _Add your deployed URL here (e.g., Streamlit Community Cloud / Azure / GCP / internal hosting)_
+- **Live dashboard**: http://0.0.0.0:8501/
 - **Run in GitHub Codespaces**: after starting the app (instructions below), open the forwarded port for Streamlit (default `8501`).
   - In Codespaces: **Ports** tab -> find `8501` -> **Open in Browser**.
 
@@ -101,7 +101,7 @@ The schema includes indexes that match common join/filter patterns in the dashbo
 
 ### How this scales (hundreds of projects, thousands of samples, more analytics)
 
-SQLite is sufficient for the small demo dataset, but the relational design is intended to migrate directly to Postgres/MySQL for larger deployments.
+SQLite is sufficient for the small demo dataset, but the relational design can be migrated directly to Postgres/MySQL for larger deployments.
 
 If you scale up:
 
