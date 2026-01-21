@@ -12,32 +12,24 @@ Interactive Streamlit dashboard for exploring immune cell population relative fr
 
 These steps reproduce the local database build and dashboard outputs using the committed example dataset in `analysis-dashboard/data/cell-count.csv`.
 
-### 1) Install Python dependencies
+### 1) Start the dashboard (one command)
 
 ```bash
-pip install -r requirements.txt
+make run
 ```
 
-### 2) Build the SQLite database from the CSV
+This will:
 
-This creates `analysis-dashboard/cell_counts.sqlite`.
-
-```bash
-python analysis-dashboard/load_cell_counts.py
-```
-
-### 3) Run the Streamlit dashboard
-
-```bash
-streamlit run analysis-dashboard/streamlit_app.py
-```
+- Install Python dependencies.
+- Build `analysis-dashboard/cell_counts.sqlite` (if missing).
+- Start Streamlit on port `8501`.
 
 Open the forwarded port `8501` in Codespaces to view the app.
 
-### 4) Run tests
+### 2) Run tests
 
 ```bash
-pytest -q
+make test
 ```
 
 ## Data model / relational database schema
