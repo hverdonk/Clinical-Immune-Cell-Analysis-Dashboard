@@ -2,7 +2,8 @@
   "name": "Clinical Immune Cell Analysis Dashboard",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
   "postCreateCommand": "bash -lc 'make install'",
-  "postStartCommand": "bash -lc 'make build-db && nohup python -m streamlit run analysis-dashboard/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 > /tmp/streamlit.log 2>&1'",
+  "postStartCommand": "bash -lc 'make build-db'",
+  "postAttachCommand": "bash -lc \"nohup python -m streamlit run analysis-dashboard/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 >/tmp/dashboard.log 2>&1 </dev/null & disown\"",
   "forwardPorts": [8501],
   "portsAttributes": {
     "8501": {
