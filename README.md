@@ -4,9 +4,7 @@ Interactive Streamlit dashboard for exploring immune cell population relative fr
 
 ## Dashboard
 
-- **Live dashboard**: http://localhost:8501/
-- **Run in GitHub Codespaces**: after starting the app (instructions below), open the forwarded port for Streamlit (default `8501`).
-  - In Codespaces: **Ports** tab -> find `8501` -> **Open in Browser**.
+- **Live dashboard**: http://localhost:8501/ or `https://${CODESPACE_NAME}-8050.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}` when running in GitHub Codespaces.
 
 ## Quickstart (Local or GitHub Codespaces)
 
@@ -41,6 +39,14 @@ streamlit run analysis-dashboard/streamlit_app.py --server.port 8501
 ```bash
 make test
 ```
+
+### Troubleshooting
+
+If you are having trouble running the dashboard in Codespaces, try the following:
+
+- Disable adblockers and VPNs, use a private/incognito browser window, or configure your network to allow access to `localhost:8501`, especially if you are running the dashboard via the Codespaces web interface in your browser.
+- Use the VSCode Codespaces plugin to connect to the Codespaces instance and run the dashboard.
+- Try running the dashboard locally instead of via the Codespaces web interface.
 
 ## Data model / relational database schema
 
