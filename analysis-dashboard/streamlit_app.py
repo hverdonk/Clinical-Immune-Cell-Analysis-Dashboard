@@ -240,16 +240,9 @@ def main() -> None:
 
 
     st.subheader("Data Overview")
-    st.caption(
-        "Quick snapshot of the filtered dataset, including project coverage and the per-sample "
-        "metadata used in downstream visualizations."
-    )
 
     # Emoji grid of project counts
     if {"project", "sample", "time_from_treatment_start"}.issubset(summary_meta_filtered.columns):
-        st.caption(
-            "Project tiles summarize how many unique samples are represented in each project, given the current filters."
-        )
         samples_per_project = (
             summary_meta_filtered.groupby("project")["sample"]
             .nunique()
@@ -311,10 +304,6 @@ def main() -> None:
 
 
     # Summary table
-    st.caption(
-        "Row-level summary of each sample and cell population after filtering. Use this table to "
-        "inspect metadata, response labels, and relative frequencies." 
-    )
     st.dataframe(
         summary_meta_filtered.drop(columns=["prop"]),
         width='stretch',
