@@ -42,7 +42,7 @@ make test
 
 ### Troubleshooting
 
-If you are having trouble running the dashboard in Codespaces, try the following:
+The dashboard should automatically install all dependencies, build the database, and start the dashboard. The entire process should take a few minutes. If you are having trouble running the dashboard in Codespaces, try the following:
 
 - Disable adblockers and VPNs, use a private/incognito browser window, or configure your network to allow access to `localhost:8501`, especially if you are running the dashboard via the Codespaces web interface in your browser.
 - Use the VSCode Codespaces plugin to connect to the Codespaces instance and run the dashboard.
