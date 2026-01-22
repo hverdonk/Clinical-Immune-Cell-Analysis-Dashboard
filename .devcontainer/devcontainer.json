@@ -9,7 +9,7 @@
   },
   "postCreateCommand": "bash -lc 'mkdir -p /workspaces/.cache/pip && make install'",
   "postStartCommand": "bash -lc 'make build-db'",
-  "postAttachCommand": "bash -lc \"nohup python -m streamlit run analysis-dashboard/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 >/tmp/dashboard.log 2>&1 </dev/null & disown\"",
+  "postAttachCommand": "bash -lc \"nohup python -m streamlit run analysis-dashboard/streamlit_app.py --server.port 8501 --server.address 0.0.0.0 >/tmp/dashboard.log 2>&1 </dev/null & disown; ./scripts/print-dashboard-url.sh 8501\"",
   "forwardPorts": [8501],
   "portsAttributes": {
     "8501": {
