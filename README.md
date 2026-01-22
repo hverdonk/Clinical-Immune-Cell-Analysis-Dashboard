@@ -4,7 +4,7 @@ Interactive Streamlit dashboard for exploring immune cell population relative fr
 
 ## Dashboard
 
-- **Live dashboard**: http://localhost:8501/ or `https://${CODESPACE_NAME}-8050.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}` when running in GitHub Codespaces.
+- **Live dashboard**: http://localhost:8501/ or `https://${CODESPACE_NAME}-8050.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}` when running in GitHub Codespaces. GitHub Codespaces will automatically forward port 8501 to your local machine and open the dashboard in your default browser.
 
 ## Quickstart (Local or GitHub Codespaces)
 
